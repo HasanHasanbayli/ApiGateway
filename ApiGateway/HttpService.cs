@@ -17,6 +17,7 @@ public class HttpService
         Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Post, uri, requestUri, arg, headers);
+
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await HandleResponse<TResult>(response);
@@ -26,6 +27,7 @@ public class HttpService
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Get, uri, requestUri, headers: headers);
+
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await HandleResponse<T>(response);
@@ -36,6 +38,7 @@ public class HttpService
         Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Put, uri, requestUri, arg, headers);
+
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await HandleResponse<TResult>(response);
@@ -45,6 +48,7 @@ public class HttpService
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Delete, uri, requestUri, headers: headers);
+
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
         await HandleResponse(response);
@@ -56,16 +60,21 @@ public class HttpService
         HttpRequestMessage request = new(method, !string.IsNullOrEmpty(requestUri) ? requestUri : uri);
 
         if (headers != null)
-            foreach (var header in headers)
-                request.Headers.Add(header.Key, header.Value);
+        {
+            foreach (KeyValuePair<string, string> header in headers)
+            {
+                request.Headers.Add(name: header.Key, header.Value);
+            }
+        }
 
         if (requestBody != null)
         {
             string jsonBody = JsonSerializer.Serialize(requestBody);
-            request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            
+            request.Content = new StringContent(jsonBody, Encoding.UTF8, mediaType: "application/json");
         }
 
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.Accept.Add(item: new MediaTypeWithQualityHeaderValue("application/json"));
 
         return request;
     }
@@ -75,6 +84,7 @@ public class HttpService
         if (!response.IsSuccessStatusCode)
         {
             string errorBody = await response.Content.ReadAsStringAsync();
+
             throw new Exception(errorBody);
         }
     }
@@ -84,6 +94,7 @@ public class HttpService
         if (!response.IsSuccessStatusCode)
         {
             string errorBody = await response.Content.ReadAsStringAsync();
+
             throw new Exception(errorBody);
         }
 
