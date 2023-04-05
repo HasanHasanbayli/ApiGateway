@@ -14,44 +14,46 @@ public class HttpService
     }
 
     public async Task<TResult> Post<T, TResult>(T arg, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
+        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default,
+        bool shouldThrowException = true)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Post, uri, requestUri, arg, headers);
 
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await HandleResponse<TResult>(response);
+        return await HandleResponse<TResult>(response, shouldThrowException: shouldThrowException);
     }
 
     public async Task<T> Get<T>(string uri, string? requestUri = null, Dictionary<string, string>? headers = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool shouldThrowException = true)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Get, uri, requestUri, headers: headers);
 
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await HandleResponse<T>(response);
+        return await HandleResponse<T>(response, shouldThrowException: shouldThrowException);
     }
 
 
     public async Task<TResult> Put<T, TResult>(T arg, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
+        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default,
+        bool shouldThrowException = true)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Put, uri, requestUri, arg, headers);
 
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await HandleResponse<TResult>(response);
+        return await HandleResponse<TResult>(response, shouldThrowException: shouldThrowException);
     }
 
     public async Task Delete(string uri, string? requestUri = null, Dictionary<string, string>? headers = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool shouldThrowException = true)
     {
         HttpRequestMessage request = CreateHttpRequest(HttpMethod.Delete, uri, requestUri, headers: headers);
 
         HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
 
-        await HandleResponse(response);
+        await HandleResponse(response: response, shouldThrowException: shouldThrowException);
     }
 
     private HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
@@ -63,14 +65,14 @@ public class HttpService
         {
             foreach (KeyValuePair<string, string> header in headers)
             {
-                request.Headers.Add(name: header.Key, header.Value);
+                request.Headers.Add(name: header.Key, value: header.Value);
             }
         }
 
         if (requestBody != null)
         {
             string jsonBody = JsonSerializer.Serialize(requestBody);
-            
+
             request.Content = new StringContent(jsonBody, Encoding.UTF8, mediaType: "application/json");
         }
 
@@ -79,27 +81,23 @@ public class HttpService
         return request;
     }
 
-    private async Task HandleResponse(HttpResponseMessage response)
+    private async Task HandleResponse(HttpResponseMessage response, bool shouldThrowException = true)
     {
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorBody = await response.Content.ReadAsStringAsync();
+        string content = await response.Content.ReadAsStringAsync();
 
-            throw new Exception(errorBody);
-        }
+        if (response.IsSuccessStatusCode) return;
+
+        if (shouldThrowException) throw new Exception(content);
     }
 
-    private async Task<T> HandleResponse<T>(HttpResponseMessage response)
+    private async Task<T> HandleResponse<T>(HttpResponseMessage httpResponse, bool shouldThrowException = true)
     {
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorBody = await response.Content.ReadAsStringAsync();
+        string content = await httpResponse.Content.ReadAsStringAsync();
 
-            throw new Exception(errorBody);
-        }
+        if (httpResponse.IsSuccessStatusCode) return JsonSerializer.Deserialize<T>(content)!;
 
-        string responseBody = await response.Content.ReadAsStringAsync();
+        if (shouldThrowException) throw new Exception(content);
 
-        return JsonSerializer.Deserialize<T>(responseBody)!;
+        return JsonSerializer.Deserialize<T>(content)!;
     }
 }
