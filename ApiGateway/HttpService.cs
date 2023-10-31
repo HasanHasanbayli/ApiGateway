@@ -13,91 +13,165 @@ public class HttpService
         _httpClient = httpClient;
     }
 
-    public async Task<TResult> Post<T, TResult>(T arg, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default,
-        bool shouldThrowException = true)
+    public async Task Send(HttpMethod httpMethod, string uri, string? requestUri = null,
+        Dictionary<string, string>? headers = null,
+        List<KeyValuePair<string, string>>? multiPartFormsData = null,
+        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = CreateHttpRequest(HttpMethod.Post, uri, requestUri, arg, headers);
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri: uri, requestUri: requestUri,
+            headers: headers, multiPartFormsData: multiPartFormsData);
 
-        HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-        return await HandleResponse<TResult>(response, shouldThrowException: shouldThrowException);
+        await SendAsync(httpRequestMessage: httpRequestMessage, shouldRequestThrow: shouldRequestThrow,
+            shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    public async Task<T> Get<T>(string uri, string? requestUri = null, Dictionary<string, string>? headers = null,
-        CancellationToken cancellationToken = default, bool shouldThrowException = true)
+    public async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
+        Dictionary<string, string>? headers = null,
+        List<KeyValuePair<string, string>>? multiPartFormsData = null,
+        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = CreateHttpRequest(HttpMethod.Get, uri, requestUri, headers: headers);
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri: uri, requestUri: requestUri, arg,
+            headers: headers, multiPartFormsData: multiPartFormsData);
 
-        HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-        return await HandleResponse<T>(response, shouldThrowException: shouldThrowException);
+        await SendAsync(httpRequestMessage: httpRequestMessage, shouldRequestThrow: shouldRequestThrow,
+            shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-
-    public async Task<TResult> Put<T, TResult>(T arg, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default,
-        bool shouldThrowException = true)
+    public async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = null,
+        Dictionary<string, string>? headers = null,
+        List<KeyValuePair<string, string>>? multiPartFormsData = null,
+        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = CreateHttpRequest(HttpMethod.Put, uri, requestUri, arg, headers);
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri: uri, requestUri: requestUri,
+            headers: headers, multiPartFormsData: multiPartFormsData);
 
-        HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-        return await HandleResponse<TResult>(response, shouldThrowException: shouldThrowException);
+        return await SendAsync<TResult>(httpRequestMessage: httpRequestMessage, shouldRequestThrow: shouldRequestThrow,
+            shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    public async Task Delete(string uri, string? requestUri = null, Dictionary<string, string>? headers = null,
-        CancellationToken cancellationToken = default, bool shouldThrowException = true)
+    public async Task<TResult?> Send<T, TResult>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
+        Dictionary<string, string>? headers = null,
+        List<KeyValuePair<string, string>>? multiPartFormsData = null,
+        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = CreateHttpRequest(HttpMethod.Delete, uri, requestUri, headers: headers);
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri: uri, requestUri: requestUri, arg,
+            headers: headers, multiPartFormsData: multiPartFormsData);
 
-        HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
-
-        await HandleResponse(response: response, shouldThrowException: shouldThrowException);
+        return await SendAsync<TResult>(httpRequestMessage: httpRequestMessage, shouldRequestThrow: shouldRequestThrow,
+            shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
     private HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
-        object? requestBody = null, Dictionary<string, string>? headers = null)
+        object? requestBody = null,
+        Dictionary<string, string>? headers = null,
+        List<KeyValuePair<string, string>>? multiPartFormsData = null)
     {
-        HttpRequestMessage request = new(method, !string.IsNullOrEmpty(requestUri) ? requestUri : uri);
+        HttpRequestMessage httpRequest = new(method, !string.IsNullOrEmpty(requestUri) ? uri + requestUri : uri);
 
         if (headers != null)
         {
-            foreach (KeyValuePair<string, string> header in headers)
-            {
-                request.Headers.Add(name: header.Key, value: header.Value);
-            }
+            FillHeaders(httpRequest: httpRequest, headers: headers);
+        }
+
+        if (multiPartFormsData != null)
+        {
+            FillMultiPartContent(httpRequest: httpRequest, multiPartFormData: multiPartFormsData);
         }
 
         if (requestBody != null)
         {
             string jsonBody = JsonSerializer.Serialize(requestBody);
 
-            request.Content = new StringContent(jsonBody, Encoding.UTF8, mediaType: "application/json");
+            httpRequest.Content = new StringContent(jsonBody, Encoding.UTF8, mediaType: "application/json");
         }
 
-        request.Headers.Accept.Add(item: new MediaTypeWithQualityHeaderValue("application/json"));
+        httpRequest.Headers.Accept.Add(item: new MediaTypeWithQualityHeaderValue("application/json"));
 
-        return request;
+        return httpRequest;
     }
 
-    private async Task HandleResponse(HttpResponseMessage response, bool shouldThrowException = true)
+    private void FillMultiPartContent(HttpRequestMessage httpRequest,
+        List<KeyValuePair<string, string>> multiPartFormData)
     {
-        string content = await response.Content.ReadAsStringAsync();
+        MultipartFormDataContent multiPartContent = new();
+
+        foreach (KeyValuePair<string, string> item in multiPartFormData)
+        {
+            multiPartContent.Add(new StringContent(item.Value), item.Key);
+        }
+
+        httpRequest.Content = multiPartContent;
+    }
+
+    private void FillHeaders(HttpRequestMessage httpRequest, Dictionary<string, string> headers)
+    {
+        foreach (KeyValuePair<string, string> header in headers)
+        {
+            httpRequest.Headers.Add(name: header.Key, header.Value);
+        }
+    }
+
+    private async Task SendAsync(HttpRequestMessage httpRequestMessage, bool shouldRequestThrow = true,
+        bool shouldResponseThrow = true, CancellationToken cancellationToken = default)
+    {
+        HttpResponseMessage? response = await SendHttpRequestAsync(httpRequestMessage: httpRequestMessage,
+            cancellationToken: cancellationToken, shouldRequestThrow: shouldRequestThrow);
+
+        if (response is null) return;
 
         if (response.IsSuccessStatusCode) return;
 
-        if (shouldThrowException) throw new Exception(content);
+        string responseData = await response.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
+
+        if (shouldResponseThrow)
+        {
+            throw new HttpResponseException(message: responseData, httpStatusCode: response.StatusCode);
+        }
     }
 
-    private async Task<T> HandleResponse<T>(HttpResponseMessage httpResponse, bool shouldThrowException = true)
+    private async Task<TResult?> SendAsync<TResult>(HttpRequestMessage httpRequestMessage,
+        bool shouldRequestThrow = true, bool shouldResponseThrow = true, CancellationToken cancellationToken = default)
     {
-        string content = await httpResponse.Content.ReadAsStringAsync();
+        HttpResponseMessage? response = await SendHttpRequestAsync(httpRequestMessage: httpRequestMessage,
+            cancellationToken: cancellationToken, shouldRequestThrow: shouldRequestThrow);
 
-        if (httpResponse.IsSuccessStatusCode) return JsonSerializer.Deserialize<T>(content)!;
+        if (response is null) return default;
 
-        if (shouldThrowException) throw new Exception(content);
+        string responseData = await response.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
 
-        return JsonSerializer.Deserialize<T>(content)!;
+        if (response.IsSuccessStatusCode)
+        {
+            return JsonSerializer.Deserialize<TResult>(json: responseData);
+        }
+
+        if (shouldResponseThrow)
+        {
+            throw new HttpResponseException(message: responseData, httpStatusCode: response.StatusCode);
+        }
+
+        return default;
+    }
+
+    private async Task<HttpResponseMessage?> SendHttpRequestAsync(HttpRequestMessage httpRequestMessage,
+        CancellationToken cancellationToken, bool shouldRequestThrow)
+    {
+        try
+        {
+            return await _httpClient.SendAsync(request: httpRequestMessage, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            if (shouldRequestThrow) throw;
+        }
+        catch (Exception)
+        {
+            if (shouldRequestThrow) throw;
+        }
+
+        return default;
     }
 }
