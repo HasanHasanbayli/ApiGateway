@@ -6,14 +6,7 @@ namespace ApiGateway;
 
 public class HttpService
 {
-    private readonly HttpClient _httpClient;
-
-    public HttpService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
-    public async Task Send(HttpMethod httpMethod, string uri, string? requestUri = null,
+    public static async Task Send(HttpMethod httpMethod, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormsData = null,
         bool shouldRequestThrow = true, bool shouldResponseThrow = true,
@@ -26,7 +19,7 @@ public class HttpService
             shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    public async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
+    public static async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormsData = null,
         bool shouldRequestThrow = true, bool shouldResponseThrow = true,
@@ -39,7 +32,7 @@ public class HttpService
             shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    public async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = null,
+    public static async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormsData = null,
         bool shouldRequestThrow = true, bool shouldResponseThrow = true,
@@ -52,7 +45,8 @@ public class HttpService
             shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    public async Task<TResult?> Send<T, TResult>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
+    public static async Task<TResult?> Send<T, TResult>(HttpMethod httpMethod, T arg, string uri,
+        string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormsData = null,
         bool shouldRequestThrow = true, bool shouldResponseThrow = true,
@@ -65,7 +59,7 @@ public class HttpService
             shouldResponseThrow: shouldResponseThrow, cancellationToken: cancellationToken);
     }
 
-    private HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
+    private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
         object? requestBody = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormsData = null)
@@ -94,7 +88,7 @@ public class HttpService
         return httpRequest;
     }
 
-    private void FillMultiPartContent(HttpRequestMessage httpRequest,
+    private static void FillMultiPartContent(HttpRequestMessage httpRequest,
         List<KeyValuePair<string, string>> multiPartFormData)
     {
         MultipartFormDataContent multiPartContent = new();
@@ -107,7 +101,7 @@ public class HttpService
         httpRequest.Content = multiPartContent;
     }
 
-    private void FillHeaders(HttpRequestMessage httpRequest, Dictionary<string, string> headers)
+    private static void FillHeaders(HttpRequestMessage httpRequest, Dictionary<string, string> headers)
     {
         foreach (KeyValuePair<string, string> header in headers)
         {
@@ -115,7 +109,7 @@ public class HttpService
         }
     }
 
-    private async Task SendAsync(HttpRequestMessage httpRequestMessage, bool shouldRequestThrow = true,
+    private static async Task SendAsync(HttpRequestMessage httpRequestMessage, bool shouldRequestThrow = true,
         bool shouldResponseThrow = true, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage? response = await SendHttpRequestAsync(httpRequestMessage: httpRequestMessage,
@@ -133,7 +127,7 @@ public class HttpService
         }
     }
 
-    private async Task<TResult?> SendAsync<TResult>(HttpRequestMessage httpRequestMessage,
+    private static async Task<TResult?> SendAsync<TResult>(HttpRequestMessage httpRequestMessage,
         bool shouldRequestThrow = true, bool shouldResponseThrow = true, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage? response = await SendHttpRequestAsync(httpRequestMessage: httpRequestMessage,
@@ -156,12 +150,14 @@ public class HttpService
         return default;
     }
 
-    private async Task<HttpResponseMessage?> SendHttpRequestAsync(HttpRequestMessage httpRequestMessage,
+    private static async Task<HttpResponseMessage?> SendHttpRequestAsync(HttpRequestMessage httpRequestMessage,
         CancellationToken cancellationToken, bool shouldRequestThrow)
     {
         try
         {
-            return await _httpClient.SendAsync(request: httpRequestMessage, cancellationToken: cancellationToken);
+            using HttpClient httpClient = new();
+
+            return await httpClient.SendAsync(request: httpRequestMessage, cancellationToken: cancellationToken);
         }
         catch (HttpRequestException)
         {
