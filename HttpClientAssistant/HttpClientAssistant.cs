@@ -4,11 +4,25 @@ using System.Text.Json;
 
 namespace HttpClientAssistant;
 
+/// <summary>
+/// The HttpClientAssistant class provides methods for making HTTP requests using the HttpClient class.
+/// </summary>
 public class HttpClientAssistant
 {
-    public static async Task Send(HttpMethod httpMethod, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null,
-        List<KeyValuePair<string, string>>? multiPartFormData = null,
+    /// <summary>
+    /// Sends an HTTP request using the specified HTTP method, URI, and optional request data.
+    /// </summary>
+    /// <param name="httpMethod">The HTTP method to use for the request.</param>
+    /// <param name="uri">The base URI for the request.</param>
+    /// <param name="requestUri">The optional relative URI for the request.</param>
+    /// <param name="headers">The optional headers to include in the request.</param>
+    /// <param name="multiPartFormData">The optional Multi-Part Form Data content for the request.</param>
+    /// <param name="throwOnRequest">Indicates whether to throw an exception on request errors (default: true).</param>
+    /// <param name="throwOnResponse">Indicates whether to throw an exception on response errors (default: true).</param>
+    /// <param name="cancellationToken">The optional cancellation token to cancel the request.</param>
+    public static async Task Send(HttpMethod httpMethod, string uri, string? requestUri = default,
+        Dictionary<string, string>? headers = default,
+        List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
@@ -18,9 +32,21 @@ public class HttpClientAssistant
         await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
-    public static async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null,
-        List<KeyValuePair<string, string>>? multiPartFormData = null,
+    /// <summary>
+    /// Sends an HTTP request using the provided parameters.
+    /// </summary>
+    /// <param name="httpMethod">The HTTP method to use.</param>
+    /// <param name="uri">The base URI for the request.</param>
+    /// <param name="requestUri">The optional request URI to append to the base URI.</param>
+    /// <param name="headers">The optional headers to include in the request.</param>
+    /// <param name="multiPartFormData">The optional multi-part form data to include in the request.</param>
+    /// <param name="throwOnRequest">Whether to throw an exception on request failure. Default is true.</param>
+    /// <param name="throwOnResponse">Whether to throw an exception on response failure. Default is true.</param>
+    /// <param name="cancellationToken">The optional cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = default,
+        Dictionary<string, string>? headers = default,
+        List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
@@ -30,22 +56,46 @@ public class HttpClientAssistant
         await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
-    public static async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = null,
-        Dictionary<string, string>? headers = null,
-        List<KeyValuePair<string, string>>? multiPartFormData = null,
+    /// <summary>
+    /// Sends an HTTP request using the specified method, URI, headers, and optional request body.
+    /// </summary>
+    /// <param name="httpMethod">The HTTP method to use for the request.</param>
+    /// <param name="uri">The base URI for the request.</param>
+    /// <param name="requestUri">The relative URI for the request.</param>
+    /// <param name="headers">Optional headers to include in the request.</param>
+    /// <param name="multiPartFormData">Optional multipart form data to include in the request.</param>
+    /// <param name="throwOnRequest">Indicates whether to throw an exception on request failure. Default is true.</param>
+    /// <param name="throwOnResponse">Indicates whether to throw an exception on response failure. Default is true.</param>
+    /// <param name="cancellationToken">Optional cancellation token for cancelling the request.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
+    public static async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = default,
+        Dictionary<string, string>? headers = default,
+        List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: null,
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: default,
             headers, multiPartFormData);
 
         return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
+    /// <summary>
+    /// Sends an HTTP request using the specified HTTP method and URI.
+    /// </summary>
+    /// <param name="httpMethod">The HTTP method to use for the request.</param>
+    /// <param name="uri">The base URI for the request.</param>
+    /// <param name="requestUri">The relative URI for the request (optional). Default is null.</param>
+    /// <param name="headers">The headers to add to the request (optional). Default is null.</param>
+    /// <param name="multiPartFormData">The multipart form data to add to the request (optional). Default is null.</param>
+    /// <param name="throwOnRequest">Indicates whether to throw an exception on request failure (optional). Default is true.</param>
+    /// <param name="throwOnResponse">Indicates whether to throw an exception on response failure (optional). Default is true.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the request (optional). Default is default.</param>
+    /// <returns>A task representing the asynchronous send operation and an optional response result.</returns>
     public static async Task<TResult?> Send<T, TResult>(HttpMethod httpMethod, T arg, string uri,
-        string? requestUri = null,
-        Dictionary<string, string>? headers = null,
-        List<KeyValuePair<string, string>>? multiPartFormData = null,
+        string? requestUri = default,
+        Dictionary<string, string>? headers = default,
+        List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
@@ -55,10 +105,20 @@ public class HttpClientAssistant
         return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
-    private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
-        object? requestBody = null,
-        Dictionary<string, string>? headers = null,
-        List<KeyValuePair<string, string>>? multiPartFormData = null)
+    /// <summary>
+    /// Creates an HttpRequestMessage object with the specified parameters.
+    /// </summary>
+    /// <param name="method">The HTTP method to be used in the request.</param>
+    /// <param name="uri">The base URI of the request.</param>
+    /// <param name="requestUri">The optional request URI to be appended to the base URI.</param>
+    /// <param name="requestBody">The optional request body object to be serialized as JSON.</param>
+    /// <param name="headers">The optional headers to be added to the request.</param>
+    /// <param name="multiPartFormData">The optional multipart form data to be added to the request.</param>
+    /// <returns>An HttpRequestMessage object constructed with the specified parameters.</returns>
+    private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = default,
+        object? requestBody = default,
+        Dictionary<string, string>? headers = default,
+        List<KeyValuePair<string, string>>? multiPartFormData = default)
     {
         string fullRequestUri = !string.IsNullOrEmpty(requestUri)
             ? uri + requestUri
@@ -88,6 +148,11 @@ public class HttpClientAssistant
         return httpRequest;
     }
 
+    /// <summary>
+    /// Fills the HTTP request message's content with multi-part form data.
+    /// </summary>
+    /// <param name="httpRequest">The HTTP request message to fill.</param>
+    /// <param name="multiPartFormData">The list of key-value pairs representing the multi-part form data.</param>
     private static void FillMultiPartContent(HttpRequestMessage httpRequest,
         List<KeyValuePair<string, string>> multiPartFormData)
     {
@@ -101,6 +166,11 @@ public class HttpClientAssistant
         httpRequest.Content = multiPartContent;
     }
 
+    /// <summary>
+    /// Fills the headers of the given <see cref="HttpRequestMessage"/> with the specified headers.
+    /// </summary>
+    /// <param name="httpRequest">The <see cref="HttpRequestMessage"/> to fill the headers for.</param>
+    /// <param name="headers">The dictionary containing the headers to be added.</param>
     private static void FillHeaders(HttpRequestMessage httpRequest, Dictionary<string, string> headers)
     {
         foreach (KeyValuePair<string, string> header in headers)
@@ -109,6 +179,13 @@ public class HttpClientAssistant
         }
     }
 
+    /// <summary>
+    /// Sends an HTTP request asynchronously.
+    /// </summary>
+    /// <param name="httpRequestMessage">The HttpRequestMessage object representing the HTTP request.</param>
+    /// <param name="throwOnRequest">A boolean value indicating whether to throw an exception on a request error. The default is true.</param>
+    /// <param name="throwOnResponse">A boolean value indicating whether to throw an exception on a response error. The default is true.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     private static async Task SendAsync(HttpRequestMessage httpRequestMessage, bool throwOnRequest = true,
         bool throwOnResponse = true, CancellationToken cancellationToken = default)
     {
@@ -125,6 +202,18 @@ public class HttpClientAssistant
         }
     }
 
+    /// <summary>
+    /// Sends an HTTP request asynchronously and returns the deserialized response.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result to deserialize the response into.</typeparam>
+    /// <param name="httpRequestMessage">The HTTP request message to send.</param>
+    /// <param name="throwOnRequest">Indicates whether to throw an exception on request errors. Default is true.</param>
+    /// <param name="throwOnResponse">Indicates whether to throw an exception on response errors. Default is true.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the async operation. Default is CancellationToken.None.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the deserialized response of type TResult.
+    /// If the request or response is unsuccessful, an exception is thrown depending on the values of throwOnRequest and throwOnResponse.
+    /// </returns>
     private static async Task<TResult?> SendAsync<TResult>(HttpRequestMessage httpRequestMessage,
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
