@@ -2,57 +2,57 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace HttpClientStreamline;
+namespace HttpClientAssistant;
 
-public class HttpService
+public class HttpClientAssistant
 {
     public static async Task Send(HttpMethod httpMethod, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormData = null,
-        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: null,
             headers, multiPartFormData);
 
-        await SendAsync(httpRequestMessage, shouldRequestThrow, shouldResponseThrow, cancellationToken);
+        await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
     public static async Task Send<T>(HttpMethod httpMethod, T arg, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormData = null,
-        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, arg,
             headers, multiPartFormData);
 
-        await SendAsync(httpRequestMessage, shouldRequestThrow, shouldResponseThrow, cancellationToken);
+        await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
     public static async Task<TResult?> Send<TResult>(HttpMethod httpMethod, string uri, string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormData = null,
-        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: null,
             headers, multiPartFormData);
 
-        return await SendAsync<TResult>(httpRequestMessage, shouldRequestThrow, shouldResponseThrow, cancellationToken);
+        return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
     public static async Task<TResult?> Send<T, TResult>(HttpMethod httpMethod, T arg, string uri,
         string? requestUri = null,
         Dictionary<string, string>? headers = null,
         List<KeyValuePair<string, string>>? multiPartFormData = null,
-        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, arg,
             headers, multiPartFormData);
 
-        return await SendAsync<TResult>(httpRequestMessage, shouldRequestThrow, shouldResponseThrow, cancellationToken);
+        return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
     }
 
     private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = null,
@@ -109,28 +109,28 @@ public class HttpService
         }
     }
 
-    private static async Task SendAsync(HttpRequestMessage httpRequestMessage, bool shouldRequestThrow = true,
-        bool shouldResponseThrow = true, CancellationToken cancellationToken = default)
+    private static async Task SendAsync(HttpRequestMessage httpRequestMessage, bool throwOnRequest = true,
+        bool throwOnResponse = true, CancellationToken cancellationToken = default)
     {
         HttpResponseMessage? response =
-            await SendHttpRequestAsync(httpRequestMessage, shouldRequestThrow, cancellationToken);
+            await SendHttpRequestAsync(httpRequestMessage, throwOnRequest, cancellationToken);
 
         if (response is null || response.IsSuccessStatusCode) return;
 
         string responseData = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        if (shouldResponseThrow)
+        if (throwOnResponse)
         {
             throw new HttpResponseException(response.StatusCode, responseData);
         }
     }
 
     private static async Task<TResult?> SendAsync<TResult>(HttpRequestMessage httpRequestMessage,
-        bool shouldRequestThrow = true, bool shouldResponseThrow = true,
+        bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
         HttpResponseMessage? response =
-            await SendHttpRequestAsync(httpRequestMessage, shouldRequestThrow, cancellationToken);
+            await SendHttpRequestAsync(httpRequestMessage, throwOnRequest, cancellationToken);
 
         if (response is null) return default;
 
@@ -141,7 +141,7 @@ public class HttpService
             return JsonSerializer.Deserialize<TResult>(responseData);
         }
 
-        if (shouldResponseThrow)
+        if (throwOnResponse)
         {
             throw new HttpResponseException(response.StatusCode, responseData);
         }
@@ -149,8 +149,15 @@ public class HttpService
         return default;
     }
 
+    /// <summary>
+    /// Sends an HTTP request asynchronously.
+    /// </summary>
+    /// <param name="httpRequestMessage">The HttpRequestMessage object containing the request details.</param>
+    /// <param name="throwOnRequest">Indicates whether an exception should be thrown if there is an error in the request. Default is true.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the request operation. Default is CancellationToken.None.</param>
+    /// <returns>Returns a Task that represents the asynchronous operation. The task result is the HttpResponseMessage object received from the request.</returns>
     private static async Task<HttpResponseMessage?> SendHttpRequestAsync(HttpRequestMessage httpRequestMessage,
-        bool shouldRequestThrow, CancellationToken cancellationToken)
+        bool throwOnRequest, CancellationToken cancellationToken)
     {
         try
         {
@@ -158,15 +165,13 @@ public class HttpService
 
             return await httpClient.SendAsync(httpRequestMessage, cancellationToken);
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            Console.WriteLine(ex.Message);
-            if (shouldRequestThrow) throw;
+            if (throwOnRequest) throw;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine(ex.Message);
-            if (shouldRequestThrow) throw;
+            if (throwOnRequest) throw;
         }
 
         return default;

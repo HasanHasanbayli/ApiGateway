@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpClientStreamline", "HttpClientStreamline\HttpClientStreamline.csproj", "{3F6576F5-1BC7-4330-BBED-3DD9B3713326}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpClientAssistant", "HttpClientAssistant\HttpClientAssistant.csproj", "{3F6576F5-1BC7-4330-BBED-3DD9B3713326}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
