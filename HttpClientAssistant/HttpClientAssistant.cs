@@ -26,7 +26,7 @@ public class HttpClientAssistant
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage httpRequestMessage = CreateHttpRequest<>(httpMethod, uri, requestUri, requestBody: null,
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: default,
             headers, multiPartFormData);
 
         await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
@@ -75,7 +75,7 @@ public class HttpClientAssistant
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage httpRequestMessage = CreateHttpRequest<>(httpMethod, uri, requestUri, requestBody: null,
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: default,
             headers, multiPartFormData);
 
         return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
@@ -119,8 +119,8 @@ public class HttpClientAssistant
     /// <param name="headers">The optional headers to be added to the request.</param>
     /// <param name="multiPartFormData">The optional multipart form data to be added to the request.</param>
     /// <returns>An HttpRequestMessage object constructed with the specified parameters.</returns>
-    private static HttpRequestMessage CreateHttpRequest<T>(HttpMethod method, string uri, string? requestUri = default,
-        T? requestBody = default,
+    private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = default,
+        object? requestBody = default,
         Dictionary<string, string>? headers = default,
         List<KeyValuePair<string, string>>? multiPartFormData = default)
     {
@@ -225,21 +225,27 @@ public class HttpClientAssistant
         HttpResponseMessage? response =
             await SendHttpRequestAsync(httpRequestMessage, throwOnRequest, cancellationToken);
 
-        if (response is null) return default;
+        if (response == default) return default;
 
         string responseData = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        if (response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
-            return JsonSerializer.Deserialize<TResult>(responseData);
-        }
+            if (!throwOnResponse) return default;
 
-        if (throwOnResponse)
-        {
             throw new HttpResponseException(response.StatusCode, responseData);
         }
 
-        return default;
+        try
+        {
+            return JsonSerializer.Deserialize<TResult>(responseData);
+        }
+        catch
+        {
+            if (!throwOnResponse) return default;
+
+            throw new InvalidOperationException(message: "Failed to deserialize response data.");
+        }
     }
 
     /// <summary>
