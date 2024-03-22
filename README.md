@@ -17,6 +17,14 @@ allows for optional cancellation of requests.
   handling strategies.
 - **Cancellation Support**: Integrates with the .NET `CancellationToken` for cancelling ongoing HTTP requests.
 
+### Installation
+
+1. Add the `HttpClientAssistant` package to your project.
+
+```bash
+dotnet add package HttpClientAssistant --version 1.0.1
+```
+
 ## Usage
 
 ### Sending a Request Without a Response
