@@ -26,7 +26,7 @@ public class HttpClientAssistant
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: null,
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest<>(httpMethod, uri, requestUri, requestBody: null,
             headers, multiPartFormData);
 
         await SendAsync(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
@@ -36,6 +36,7 @@ public class HttpClientAssistant
     /// Sends an HTTP request using the provided parameters.
     /// </summary>
     /// <param name="httpMethod">The HTTP method to use.</param>
+    /// <param name="arg"></param>
     /// <param name="uri">The base URI for the request.</param>
     /// <param name="requestUri">The optional request URI to append to the base URI.</param>
     /// <param name="headers">The optional headers to include in the request.</param>
@@ -48,7 +49,7 @@ public class HttpClientAssistant
         Dictionary<string, string>? headers = default,
         List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) where T : class
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, arg,
             headers, multiPartFormData);
@@ -74,7 +75,7 @@ public class HttpClientAssistant
         bool throwOnRequest = true, bool throwOnResponse = true,
         CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, requestBody: default,
+        HttpRequestMessage httpRequestMessage = CreateHttpRequest<>(httpMethod, uri, requestUri, requestBody: null,
             headers, multiPartFormData);
 
         return await SendAsync<TResult>(httpRequestMessage, throwOnRequest, throwOnResponse, cancellationToken);
@@ -83,7 +84,10 @@ public class HttpClientAssistant
     /// <summary>
     /// Sends an HTTP request using the specified HTTP method and URI.
     /// </summary>
+    /// <typeparam name="T">The type of the argument to include in the request.</typeparam>
+    /// <typeparam name="TResult">The type of the response result.</typeparam>
     /// <param name="httpMethod">The HTTP method to use for the request.</param>
+    /// <param name="arg">The argument to include in the request.</param>
     /// <param name="uri">The base URI for the request.</param>
     /// <param name="requestUri">The relative URI for the request (optional). Default is null.</param>
     /// <param name="headers">The headers to add to the request (optional). Default is null.</param>
@@ -97,7 +101,7 @@ public class HttpClientAssistant
         Dictionary<string, string>? headers = default,
         List<KeyValuePair<string, string>>? multiPartFormData = default,
         bool throwOnRequest = true, bool throwOnResponse = true,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) where T : class
     {
         HttpRequestMessage httpRequestMessage = CreateHttpRequest(httpMethod, uri, requestUri, arg,
             headers, multiPartFormData);
@@ -115,8 +119,8 @@ public class HttpClientAssistant
     /// <param name="headers">The optional headers to be added to the request.</param>
     /// <param name="multiPartFormData">The optional multipart form data to be added to the request.</param>
     /// <returns>An HttpRequestMessage object constructed with the specified parameters.</returns>
-    private static HttpRequestMessage CreateHttpRequest(HttpMethod method, string uri, string? requestUri = default,
-        object? requestBody = default,
+    private static HttpRequestMessage CreateHttpRequest<T>(HttpMethod method, string uri, string? requestUri = default,
+        T? requestBody = default,
         Dictionary<string, string>? headers = default,
         List<KeyValuePair<string, string>>? multiPartFormData = default)
     {
